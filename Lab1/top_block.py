@@ -3,7 +3,7 @@
 ##################################################
 # GNU Radio Python Flow Graph
 # Title: Top Block
-# Generated: Thu Jul 27 13:04:48 2017
+# Generated: Fri Jul 28 02:47:16 2017
 ##################################################
 
 if __name__ == '__main__':
@@ -17,9 +17,9 @@ if __name__ == '__main__':
             print "Warning: failed to XInitThreads()"
 
 from gnuradio import analog
-from gnuradio import audio
 from gnuradio import blocks
 from gnuradio import eng_notation
+from gnuradio import filter
 from gnuradio import gr
 from gnuradio import wxgui
 from gnuradio.eng_option import eng_option
@@ -46,8 +46,8 @@ class top_block(grc_wxgui.top_block_gui):
         # Blocks
         ##################################################
         self.mynotebook = self.mynotebook = wx.Notebook(self.GetWin(), style=wx.NB_TOP)
-        self.mynotebook.AddPage(grc_wxgui.Panel(self.mynotebook), "Scope_Sink")
         self.mynotebook.AddPage(grc_wxgui.Panel(self.mynotebook), "FFT")
+        self.mynotebook.AddPage(grc_wxgui.Panel(self.mynotebook), "ScopeSink")
         self.Add(self.mynotebook)
         self.wxgui_scopesink2_0 = scopesink2.scope_sink_f(
         	self.mynotebook.GetPage(0).GetWin(),
@@ -77,23 +77,26 @@ class top_block(grc_wxgui.top_block_gui):
         	avg_alpha=None,
         	title='FFT Plot',
         	peak_hold=False,
+        	win=window.hamming,
         )
         self.mynotebook.GetPage(1).Add(self.wxgui_fftsink2_0.win)
+        self.hilbert_fc_0 = filter.hilbert_fc(500, firdes.WIN_HAMMING, 6.76)
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_float*1, samp_rate,True)
-        self.blocks_multiply_xx_0 = blocks.multiply_vff(1)
-        self.audio_sink_0 = audio.sink(samp_rate, 'Audio', True)
-        self.analog_sig_source_x_0_0 = analog.sig_source_f(samp_rate, analog.GR_COS_WAVE, 10000, 1, 0)
-        self.analog_sig_source_x_0 = analog.sig_source_f(samp_rate, analog.GR_COS_WAVE, 500, 1, 0)
+        self.blocks_divide_xx_0 = blocks.divide_cc(1)
+        self.blocks_complex_to_real_0 = blocks.complex_to_real(1)
+        self.analog_sig_source_x_0_0_0 = analog.sig_source_c(samp_rate, analog.GR_SIN_WAVE, 10000, 1, 0)
+        self.analog_sig_source_x_0_0 = analog.sig_source_f(samp_rate, analog.GR_TRI_WAVE, 500, 1, 0)
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_sig_source_x_0, 0), (self.blocks_multiply_xx_0, 0))    
-        self.connect((self.analog_sig_source_x_0_0, 0), (self.blocks_multiply_xx_0, 1))    
-        self.connect((self.blocks_multiply_xx_0, 0), (self.blocks_throttle_0, 0))    
-        self.connect((self.blocks_throttle_0, 0), (self.audio_sink_0, 0))    
+        self.connect((self.analog_sig_source_x_0_0, 0), (self.hilbert_fc_0, 0))    
+        self.connect((self.analog_sig_source_x_0_0_0, 0), (self.blocks_divide_xx_0, 1))    
+        self.connect((self.blocks_complex_to_real_0, 0), (self.blocks_throttle_0, 0))    
+        self.connect((self.blocks_divide_xx_0, 0), (self.blocks_complex_to_real_0, 0))    
         self.connect((self.blocks_throttle_0, 0), (self.wxgui_fftsink2_0, 0))    
         self.connect((self.blocks_throttle_0, 0), (self.wxgui_scopesink2_0, 0))    
+        self.connect((self.hilbert_fc_0, 0), (self.blocks_divide_xx_0, 0))    
 
     def get_samp_rate(self):
         return self.samp_rate
@@ -103,8 +106,8 @@ class top_block(grc_wxgui.top_block_gui):
         self.wxgui_scopesink2_0.set_sample_rate(self.samp_rate)
         self.wxgui_fftsink2_0.set_sample_rate(self.samp_rate)
         self.blocks_throttle_0.set_sample_rate(self.samp_rate)
+        self.analog_sig_source_x_0_0_0.set_sampling_freq(self.samp_rate)
         self.analog_sig_source_x_0_0.set_sampling_freq(self.samp_rate)
-        self.analog_sig_source_x_0.set_sampling_freq(self.samp_rate)
 
 
 def main(top_block_cls=top_block, options=None):
